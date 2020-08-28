@@ -23,6 +23,108 @@ spring 框架有超多的延伸产品例如 boot security jpa etc... 但它的�
 
 Spring 最初利用“工厂模式”（ DI ）和“代理模式”（ AOP ）解耦应用组件。大家觉得挺好用，于是按照这种模式搞了一个 MVC 框架（一些用 Spring 解耦的组件），用开发 web 应用（ SpringMVC ）。然后有发现每次开发都要搞很多依赖，写很多样板代码很麻烦，于是搞了一些懒人整合包（ starter ），这套就是 Spring Boot 。
 
+### 说出使用Spring Boot的主要优点
+
+1. 开发基于 Spring 的应用程序很容易。
+2. Spring Boot 项目所需的开发或工程时间明显减少，通常会提高整体生产力。
+3. Spring Boot不需要编写大量样板代码、XML配置和注释。
+4. Spring引导应用程序可以很容易地与Spring生态系统集成，如Spring JDBC、Spring ORM、Spring Data、Spring Security等。
+5. Spring Boot遵循“固执己见的默认配置”，以减少开发工作（默认配置可以修改）。
+6. Spring Boot 应用程序提供嵌入式HTTP服务器，如Tomcat和Jetty，可以轻松地开发和测试web应用程序。（这点很赞！普通运行Java程序的方式就能运行基于Spring Boot web 项目，省事很多）
+7. Spring Boot提供命令行接口(CLI)工具，用于开发和测试Spring Boot应用程序，如Java或Groovy。
+8. Spring Boot提供了多种插件，可以使用内置工具(如Maven和Gradle)开发和测试Spring Boot应用程序。
+
+
+
+### 什么是 Spring Boot Starters?
+
+Spring Boot Starters 是一系列依赖关系的集合，因为它的存在，项目的依赖之间的关系对我们来说变的更加简单了。举个例子：在没有Spring Boot Starters之前，我们开发REST服务或Web应用程序时; 我们需要使用像Spring MVC，Tomcat和Jackson这样的库，这些依赖我们需要手动一个一个添加。但是，有了 Spring Boot Starters 我们只需要一个只需添加一个**spring-boot-starter-web**一个依赖就可以了，这个依赖包含的字依赖中包含了我们开发REST 服务需要的所有依赖。
+
+```
+<dependency>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-web</artifactId>
+</dependency>
+```
+
+### 如何在Spring Boot应用程序中使用Jetty而不是Tomcat?
+
+Spring Boot Web starter使用Tomcat作为默认的嵌入式servlet容器, 如果你想使用 Jetty 的话只需要修改pom.xml(Maven)或者build.gradle(Gradle)就可以了。
+
+**Maven:**
+
+```
+<!--从Web启动器依赖中排除Tomcat-->
+<dependency>
+	<groupId>org.springframework.boot</groupId>
+	<artifactId>spring-boot-starter-web</artifactId>
+	<exclusions>
+		<exclusion>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-tomcat</artifactId>
+		</exclusion>
+	</exclusions>
+</dependency>
+<!--添加Jetty依赖-->
+<dependency>
+	<groupId>org.springframework.boot</groupId>
+	<artifactId>spring-boot-starter-jetty</artifactId>
+</dependency>
+```
+
+**Gradle:**
+
+```
+compile("org.springframework.boot:spring-boot-starter-web") {
+     exclude group: 'org.springframework.boot', module: 'spring-boot-starter-tomcat'
+}
+compile("org.springframework.boot:spring-boot-starter-jetty")
+```
+
+说个题外话，从上面可以看出使用 Gradle 更加简洁明了，但是国内目前还是 Maven 使用的多一点，我个人觉得 Gradle 在很多方面都要好很多。
+
+###  介绍一下@SpringBootApplication注解
+
+```
+package org.springframework.boot.autoconfigure;
+@Target(ElementType.TYPE)
+@Retention(RetentionPolicy.RUNTIME)
+@Documented
+@Inherited
+@SpringBootConfiguration
+@EnableAutoConfiguration
+@ComponentScan(excludeFilters = {
+		@Filter(type = FilterType.CUSTOM, classes = TypeExcludeFilter.class),
+		@Filter(type = FilterType.CUSTOM, classes = AutoConfigurationExcludeFilter.class) })
+public @interface SpringBootApplication {
+   ......
+}
+package org.springframework.boot;
+@Target(ElementType.TYPE)
+@Retention(RetentionPolicy.RUNTIME)
+@Documented
+@Configuration
+public @interface SpringBootConfiguration {
+
+}
+```
+
+可以看出大概可以把 `@SpringBootApplication `看作是 `@Configuration`、`@EnableAutoConfiguration`、`@ComponentScan `注解的集合。根据 SpringBoot官网，这三个注解的作用分别是：
+
+- `@EnableAutoConfiguration`：启用 SpringBoot 的自动配置机制
+- `@ComponentScan`： 扫描被`@Component` (`@Service`,`@Controller`)注解的bean，注解默认会扫描该类所在的包下所有的类。
+- `@Configuration`：允许在上下文中注册额外的bean或导入其他配置类
+
+### (重要)Spring Boot 的自动配置是如何实现的?
+
+这个是因为`@SpringBootApplication `注解的原因，在上一个问题中已经提到了这个注解。我们知道 `@SpringBootApplication `看作是 `@Configuration`、`@EnableAutoConfiguration`、`@ComponentScan `注解的集合。
+
+- `@EnableAutoConfiguration`：启用 SpringBoot 的自动配置机制
+- `@ComponentScan`： 扫描被`@Component` (`@Service`,`@Controller`)注解的bean，注解默认会扫描该类所在的包下所有的类。
+- `@Configuration`：允许在上下文中注册额外的bean或导入其他配置类
+
+
+
 ## IOC和DI
 
 ①IOC即控制反转，简单来说就是把对象的控制权委托给spring框架，作用是降低代码的耦合度。
@@ -192,6 +294,609 @@ Aop即面向切面编程，简单地说就是将代码中重复的部分抽取�
 ②cglib的原理是对指定的目标类**生成一个子类**，**并覆盖其中方法实现增强**，但因为采用的是**继承**，所以不能对final修饰的类和方法进行代理。
 
 - CGLib是采用ASM框架写字节码，**生成代理类的效率低**。但是CGLib**调用方法的效率高**，因为JDK使用反射来调用方法，CGLib使用FastClass机制为代理类和被代理类各生成一个类，这个类会为代理类或被代理类的方法生成一个index，这个index可以作为参数直接定位要调用的方法。
+
+1 
+
+**使用JDK动态代理的五大步骤：**
+
+1）通过实现InvocationHandler接口来自定义自己的InvocationHandler；
+
+2）通过Proxy.getProxyClass获得动态代理类；
+
+3）通过反射机制获得代理类的构造方法，方法签名为getConstructor(InvocationHandler.class)；
+
+4）通过构造函数获得代理对象并将自定义的InvocationHandler实例对象传为参数传入；
+
+5）通过代理对象调用目标方法；
+
+**IHello接口**
+
+```java
+package com.jpeony.spring.proxy.jdk;
+
+
+
+ 
+
+
+
+public interface IHello {
+
+
+
+    void sayHello();
+
+
+
+}
+```
+
+**HelloImpl接口实现**
+
+```java
+package com.jpeony.spring.proxy.jdk;
+
+
+
+ 
+
+
+
+public class HelloImpl implements IHello {
+
+
+
+    @Override
+
+
+
+    public void sayHello() {
+        System.out.println("Hello world!");
+
+
+
+    }
+
+
+
+}
+```
+
+**MyInvocationHandler(实现InvocationHandler接口)**
+
+```java
+package com.jpeony.spring.proxy.jdk;
+
+
+
+ 
+
+
+
+import java.lang.reflect.InvocationHandler;
+
+
+
+import java.lang.reflect.Method;
+
+
+
+ 
+
+
+
+public class MyInvocationHandler implements InvocationHandler {
+
+
+
+ 
+
+
+
+    /** 目标对象 */
+
+
+
+    private Object target;
+
+
+
+ 
+
+
+
+    public MyInvocationHandler(Object target){
+
+
+
+        this.target = target;
+
+
+
+    }
+
+
+
+ 
+
+
+
+    @Override
+
+
+
+    public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
+
+
+
+        System.out.println("------插入前置通知代码-------------");
+
+
+
+        // 执行相应的目标方法
+
+
+
+        Object rs = method.invoke(target,args);
+
+
+
+        System.out.println("------插入后置处理代码-------------");
+
+
+
+        return rs;
+
+
+
+    }
+
+
+
+}
+```
+
+**MyProxyTest(Client)**
+
+```java
+package com.jpeony.spring.proxy.jdk;
+
+
+
+ 
+
+
+
+import java.lang.reflect.Constructor;
+
+
+
+import java.lang.reflect.InvocationHandler;
+
+
+
+import java.lang.reflect.InvocationTargetException;
+
+
+
+import java.lang.reflect.Proxy;
+
+
+
+ 
+
+
+
+/**
+
+
+
+ * 使用JDK动态代理的五大步骤:
+
+
+
+ * 1.通过实现InvocationHandler接口来自定义自己的InvocationHandler;
+
+
+
+ * 2.通过Proxy.getProxyClass获得动态代理类
+
+
+
+ * 3.通过反射机制获得代理类的构造方法，方法签名为getConstructor(InvocationHandler.class)
+
+
+
+ * 4.通过构造函数获得代理对象并将自定义的InvocationHandler实例对象传为参数传入
+
+
+
+ * 5.通过代理对象调用目标方法
+
+
+
+ */
+
+
+
+public class MyProxyTest {
+
+
+
+    public static void main(String[] args)
+
+
+
+            throws NoSuchMethodException, IllegalAccessException, InstantiationException, InvocationTargetException {
+
+
+
+        // =========================第一种==========================
+
+
+
+        // 1、生成$Proxy0的class文件
+
+
+
+        System.getProperties().put("sun.misc.ProxyGenerator.saveGeneratedFiles", "true");
+
+
+
+        // 2、获取动态代理类
+
+
+
+        Class proxyClazz = Proxy.getProxyClass(IHello.class.getClassLoader(),IHello.class);
+
+
+
+        // 3、获得代理类的构造函数，并传入参数类型InvocationHandler.class
+
+
+
+        Constructor constructor = proxyClazz.getConstructor(InvocationHandler.class);
+
+
+
+        // 4、通过构造函数来创建动态代理对象，将自定义的InvocationHandler实例传入
+
+
+
+        IHello iHello1 = (IHello) constructor.newInstance(new MyInvocationHandler(new HelloImpl()));
+
+
+
+        // 5、通过代理对象调用目标方法
+
+
+
+        iHello1.sayHello();
+
+
+
+ 
+
+
+
+        // ==========================第二种=============================
+
+
+
+        /**
+
+
+
+         * Proxy类中还有个将2~4步骤封装好的简便方法来创建动态代理对象，
+
+
+
+         *其方法签名为：newProxyInstance(ClassLoader loader,Class<?>[] instance, InvocationHandler h)
+
+
+
+         */
+
+
+
+        IHello  iHello2 = (IHello) Proxy.newProxyInstance(IHello.class.getClassLoader(), // 加载接口的类加载器
+
+
+
+                new Class[]{IHello.class}, // 一组接口
+
+
+
+                new MyInvocationHandler(new HelloImpl())); // 自定义的InvocationHandler
+
+
+
+        iHello2.sayHello();
+
+
+
+    }
+
+
+
+}
+```
+
+2
+
+实现一个业务类，注意，这个业务类并没有实现任何接口：
+
+```java
+package com.jpeony.spring.proxy.cglib;
+
+
+
+ 
+
+
+
+public class HelloService {
+
+
+
+ 
+
+
+
+    public HelloService() {
+
+
+
+        System.out.println("HelloService构造");
+
+
+
+    }
+
+
+
+ 
+
+
+
+    /**
+
+
+
+     * 该方法不能被子类覆盖,Cglib是无法代理final修饰的方法的
+
+
+
+     */
+
+
+
+    final public String sayOthers(String name) {
+
+
+
+        System.out.println("HelloService:sayOthers>>"+name);
+
+
+
+        return null;
+
+
+
+    }
+
+
+
+ 
+
+
+
+    public void sayHello() {
+
+
+
+        System.out.println("HelloService:sayHello");
+
+
+
+    }
+
+
+
+}
+```
+
+自定义MethodInterceptor：
+
+```java
+package com.jpeony.spring.proxy.cglib;
+
+
+
+ 
+
+
+
+import net.sf.cglib.proxy.MethodInterceptor;
+
+
+
+import net.sf.cglib.proxy.MethodProxy;
+
+
+
+ 
+
+
+
+import java.lang.reflect.Method;
+
+
+
+ 
+
+
+
+/**
+
+
+
+ * 自定义MethodInterceptor
+
+
+
+ */
+
+
+
+public class MyMethodInterceptor implements MethodInterceptor{
+
+
+
+ 
+
+
+
+    /**
+
+
+
+     * sub：cglib生成的代理对象
+
+
+
+     * method：被代理对象方法
+
+
+
+     * objects：方法入参
+
+
+
+     * methodProxy: 代理方法
+
+
+
+     */
+
+
+
+    @Override
+
+
+
+    public Object intercept(Object sub, Method method, Object[] objects, MethodProxy methodProxy) throws Throwable {
+
+
+
+        System.out.println("======插入前置通知======");
+
+
+
+        Object object = methodProxy.invokeSuper(sub, objects);
+
+
+
+        System.out.println("======插入后者通知======");
+
+
+
+        return object;
+
+
+
+    }
+
+
+
+}
+```
+
+生成CGLIB代理对象调用目标方法：
+
+```java
+package com.jpeony.spring.proxy.cglib;
+
+
+
+ 
+
+
+
+import net.sf.cglib.core.DebuggingClassWriter;
+
+
+
+import net.sf.cglib.proxy.Enhancer;
+
+
+
+ 
+
+
+
+public class Client {
+
+
+
+    public static void main(String[] args) {
+
+
+
+        // 代理类class文件存入本地磁盘方便我们反编译查看源码
+
+
+
+        System.setProperty(DebuggingClassWriter.DEBUG_LOCATION_PROPERTY, "D:\\code");
+
+
+
+        // 通过CGLIB动态代理获取代理对象的过程
+
+
+
+        Enhancer enhancer = new Enhancer();
+
+
+
+        // 设置enhancer对象的父类
+
+
+
+        enhancer.setSuperclass(HelloService.class);
+
+
+
+        // 设置enhancer的回调对象
+
+
+
+        enhancer.setCallback(new MyMethodInterceptor());
+
+
+
+        // 创建代理对象
+
+
+
+        HelloService proxy= (HelloService)enhancer.create();
+
+
+
+        // 通过代理对象调用目标方法
+
+
+
+        proxy.sayHello();
+
+
+
+    }
+
+
+
+}
+```
 
 ### 相关注解
 
